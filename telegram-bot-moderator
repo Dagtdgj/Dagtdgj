@@ -4,7 +4,7 @@ bot = telebot.TeleBot("5974483976:AAEaC2vsU_Rl9GpbQ0Tp-7t2rlBA1z3NnLM", parse_mo
 
 @bot.message_handler(commands=["start"])
 def start(m, res=False):
-    bot.send_message(m.chat.id, """👋Привет! Я - бот-модератор. 
+    bot.send_message(m.chat.id, """👋Привет! Я - бот-модератор 
     
     🦾Я могу выдавать мут (/mute) и кикать пользователя из чата (сообщества) (/ban)
     
