@@ -1,6 +1,6 @@
 import telebot
 
-bot = telebot.TeleBot("5974483976:AAEaC2vsU_Rl9GpbQ0Tp-7t2rlBA1z3NnLM", parse_mode=None)
+bot = telebot.TeleBot("напишите сюда свой API токен", parse_mode=None)
 
 @bot.message_handler(commands=["start"])
 def start(m, res=False):
