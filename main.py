@@ -1,7 +1,7 @@
 import telebot
 from datetime import datetime, timedelta
 
-bot = telebot.TeleBot('пишем сюда свой API токен из BotFather')
+bot = telebot.TeleBot('5974483976:AAEaC2vsU_Rl9GpbQ0Tp-7t2rlBA1z3NnLM')
 
 users = {}
 
@@ -16,7 +16,8 @@ def start_command(message):
     доп. информация - /help""")
 
 @bot.message_handler(commands=["help"])
-def start(m, res=False):    bot.send_message(m.chat.id, """вот, что на данный момент я умею:
+def start(m, res=False):
+    bot.send_message(m.chat.id, """вот, что на данный момент я умею:
     /mute - выдавать мут пользователю на 1 час (3600 сек)
     /ban - кикать человека из чата
     /top - выдавать топ - пользователей за сегодня (данная функция является BETA, поэтому может не работать)
@@ -30,7 +31,7 @@ def dop(m, res=False):
 
 На самом деле я был написан на языке - Python. Если так интересно, то вот мой код - https://github.com/Dagtdgj/Dagtdgj
 
-Мой код на самом деле довольно длинный, но очень простой. Он написан в 81 строчек кода, причем без ипользования интернета, разве что нейросети, которая исправляла ошибки в коде, на случай если мой создатель не понял как их исправить. Что бы написать такого бота, достаточно знать базовые знания Python, не больше)
+Мой код на самом деле довольно длинный, но очень простой. Он написан в 107 строчек кода. Что бы написать такого бота, достаточно знать базовые знания Python, не больше)
 
 Я надеюсь эта информация дала вам хоть какие-то новые знания. Меня будут дорабатывать и добавлять новые команды/функции, а так я только BETA - версия.
 
@@ -81,6 +82,26 @@ def top_users(message):
         bot.send_message(chat_id, message_text)
     else:
         bot.send_message(chat_id, 'На сегодня нет данных о сообщениях пользователей')
+
+        # получаем информацию о чате
+        chat_info = bot.get_chat(chat_id='CHAT_ID')
+
+        # получаем список администраторов чата
+        admins = bot.get_chat_administrators(chat_id='CHAT_ID')
+
+        # получаем идентификатор пользователя, отправившего команду
+        user_id = update.message.from_user.id
+
+        # проверяем, является ли пользователь администратором чата
+        is_admin = False
+        for admin in admins:
+            if admin.user.id == user_id:
+                is_admin = True
+                break
+
+        # если пользователь не является администратором чата, отправляем ему сообщение
+        if not is_admin:
+            bot.send_message(chat_id=user_id, text='Вы не являетесь администратором этого чата.')
 
 
 bot.polling()
