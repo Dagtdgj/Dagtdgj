@@ -1,7 +1,7 @@
 import telebot
 from datetime import datetime, timedelta
 
-bot = telebot.TeleBot('5974483976:AAEaC2vsU_Rl9GpbQ0Tp-7t2rlBA1z3NnLM')
+bot = telebot.TeleBot('сюда пишем свой API токен')
 
 users = {}
 
