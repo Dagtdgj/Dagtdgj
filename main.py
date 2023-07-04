@@ -1,20 +1,32 @@
 import telebot
+import logging
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Updater, CommandHandler, CallbackContext, CallbackQueryHandler
 from datetime import datetime, timedelta
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-bot = telebot.TeleBot('тут мой API токен')
+# Установка уровня логирования
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                     level=logging.INFO)
+
+bot = telebot.TeleBot('5974483976:AAEaC2vsU_Rl9GpbQ0Tp-7t2rlBA1z3NnLM')
 
 users = {}
+# Словарь для хранения информации о замуте пользователей
+muted_users = {}
+
+
 
 
 @bot.message_handler(commands=["start"])
 def start_command(message):
     bot.send_message(message.chat.id, """👋Привет! Я - бот-модератор.
 
-🦾Я могу выдавать мут (/mute), кикать пользователя из чата (сообщества) (/ban), а так же выдавать топ - пользователей за сегодня (/top) (данная функция является BETA, поэтому может не работать)  P.S. все команды можно посмотреть в /help
+🦾Я могу выдавать мут (/mute), кикать пользователя из чата (сообщества) (/ban), а также выдавать топ-пользователей за сегодня (/top) (данная функция является BETA, поэтому может не работать). P.S. все команды можно посмотреть в /help
 
-    👀Что бы я мог это делать, тебе нужно добавить меня в чат (сообщество), назначить администратором и проверить, что бы у меня был доступ к чату и нужным функциям.
+👀Чтобы я мог это делать, тебе нужно добавить меня в чат (сообщество), назначить администратором и проверить, чтобы у меня был доступ к чату и нужным функциям.
 
-    доп. информация/все команды - /help""")
+Дополнительная информация/все команды - /help""")
 
 
 @bot.message_handler(commands=["help"])
@@ -27,6 +39,24 @@ def start(m, res=False):
     /new_update - Здесь будет список новых обновлений бота, который обязательно будет дополнятся, а так же список того, что скоро будет обновлено в боте.
 
     что бы воспользоваться командами, вы должны ответить на сообщение пользователя, которого хотите забанить или же выдать мут.""")
+
+
+@bot.message_handler(commands=["new_update"])
+def new_update_command(message):
+    user_name = message.from_user.first_name
+    bot.send_message(message.chat.id, f"""Привет, {user_name}! Ты попал(а) в раздел 'новые обновления'. Здесь будет список новых обновлений бота, который обязательно будет дополняться, а также список того, что скоро будет обновлено в боте!
+
+Вышедшие обновления:
+
+1. Наш новый Телеграм-бот для предложений/идей для нашего бота-модератора - @boostDlog_bot
+2. Новая система команд /ban и /mute
+3. Новые команды: /idea
+4. Устранены баги команд /ban и /mute
+
+Скоро:
+
+1. Новая база данных для улучшаемой производительности бота и устранения ошибок + хранение данных команды /top
+1.1. Финальная версия команды /top""")
 
 
 @bot.message_handler(commands=["idea"])
@@ -58,74 +88,197 @@ def top_users(message):
     else:
         bot.send_message(chat_id, 'На сегодня нет данных о сообщениях пользователей')
 
-
-@bot.message_handler(commands=["new_update"])
-def handle_start(message):
-    user_name = message.from_user.first_name
-    bot.send_message(message.chat.id,
-                     f"""Привет, {user_name}! Ты попал(а) в раздел 'новые обновления'. Здесь будет список новых обновлений бота, который обязательно будет дополнятся, а так же список того, что скоро будет обновлено в боте!
+# Определение функции is_moderator
+def is_moderator(chat_id, user_id):
+    # Здесь должна быть логика проверки, является ли пользователь модератором
+    return  # Замените это на вашу логику
 
 
-Вышедшие обновления:         
+@bot.message_handler(commands=['ban'])
+def ban_command(message):
+    if not message.reply_to_message:
+        bot.send_message(message.chat.id, "Ошибка: Необходимо ответить на сообщение пользователя, которого вы хотите забанить.")
+        return
 
-1. Наш новый Телеграм-бот для предложений/идей для нашего бота-модератора    -   @boostDlog_bot 
+    user_to_ban = message.reply_to_message.from_user
+    if user_to_ban:
+        user_id = user_to_ban.id
+        chat_id = message.chat.id
+        if not is_owner(chat_id, user_id):
+            if user_id == bot.get_me().id:
+                bot.send_message(chat_id, "Вы не можете использовать эту команду на сообщении бота.")
+            elif user_id == message.from_user.id:
+                bot.send_message(chat_id, "Вы не можете использовать эту команду на своем собственном сообщении.")
 
-Скоро:
-
-1. Новая база данных для улучшаемой производительности бота и устранения ошибок + хранение данных команды /top
-
-1.1. Финальная версия команды /top
-
-2. Устранение бага команд, которые действуют на бота (этого не должно быть)""")
-
-
-@bot.message_handler(func=lambda message: True)
-def handle_message(message):
-    if message.reply_to_message:
-        if message.text == '/ban':
-            if message.reply_to_message.from_user.id == bot.get_me().id:
-                bot.reply_to(message, "Нельзя использовать команды на самом боте")
-            elif message.reply_to_message.from_user.id == message.from_user.id:
-                bot.reply_to(message, "Нельзя использовать команду на себе")
             else:
-                # Perform ban logic here
-                # Send confirmation message with buttons
-                keyboard = telebot.types.InlineKeyboardMarkup()
-                confirm_button = telebot.types.InlineKeyboardButton(text="Продолжить", callback_data="ban_confirm")
-                cancel_button = telebot.types.InlineKeyboardButton(text="Отмена", callback_data="ban_cancel")
-                keyboard.add(confirm_button, cancel_button)
-                bot.reply_to(message, "Вы уверены, что хотите забанить пользователя?", reply_markup=keyboard)
-        elif message.text == '/mute':
-            if message.reply_to_message.from_user.id == bot.get_me().id:
-                bot.reply_to(message, "Нельзя использовать команды на самом боте")
-            elif message.reply_to_message.from_user.id == message.from_user.id:
-                bot.reply_to(message, "Нельзя использовать команду на себе")
+                bot.send_message(
+                    chat_id,
+                    f"Вы уверены, что хотите забанить пользователя {user_to_ban.first_name}?",
+                    reply_markup=get_confirmation_keyboard('ban', user_id),
+                )
+        else:
+            bot.send_message(chat_id, "Невозможно удалить владельца чата")
+    else:
+        bot.send_message(chat_id, "Не удалось определить пользователя для бана.")
+
+@bot.message_handler(commands=['mute'])
+def mute_command(message):
+    if not message.reply_to_message:
+        bot.send_message(message.chat.id, "Ошибка: Необходимо ответить на сообщение пользователя, которому вы хотите выдать мут.")
+        return
+
+    user_to_mute = message.reply_to_message.from_user
+    if user_to_mute:
+        user_id = user_to_mute.id
+        chat_id = message.chat.id
+        if user_id == bot.get_me().id:
+            bot.send_message(chat_id, "Вы не можете использовать эту команду на сообщении бота.")
+        elif user_id == message.from_user.id:
+            bot.send_message(chat_id, "Вы не можете использовать эту команду на своем собственном сообщении.")
+        elif is_owner(chat_id, user_id):  # Добавляем проверку на владельца чата
+            bot.send_message(chat_id, "Невозможно выдать мут владельцу чата.")
+        else:
+            bot.send_message(
+                chat_id,
+                f"Вы уверены, что хотите выдать мут пользователю {user_to_mute.first_name} на 1 час?",
+                reply_markup=get_confirmation_keyboard('mute', user_id),
+            )
+    else:
+        bot.send_message(chat_id, "Не удалось определить пользователя для выдачи мута")
+
+
+
+@bot.message_handler(commands=['ban'])
+def ban_command(message):
+    user_to_ban = message.reply_to_message.from_user
+    if user_to_ban:
+        user_id = user_to_ban.id
+        chat_id = message.chat.id
+        if not is_owner(chat_id, user_id):
+            if user_id == bot.get_me().id:
+                bot.send_message(chat_id, "Вы не можете использовать эту команду на сообщении бота.")
+            elif user_id == message.from_user.id:
+                bot.send_message(chat_id, "Вы не можете использовать эту команду на своем собственном сообщении.")
             else:
-                # Perform mute logic here
-                # Send confirmation message with buttons
-                keyboard = telebot.types.InlineKeyboardMarkup()
-                confirm_button = telebot.types.InlineKeyboardButton(text="Продолжить", callback_data="mute_confirm")
-                cancel_button = telebot.types.InlineKeyboardButton(text="Отмена", callback_data="mute_cancel")
-                keyboard.add(confirm_button, cancel_button)
-                bot.reply_to(message, "Вы уверены, что хотите выдать мут пользователю?", reply_markup=keyboard)
+                bot.send_message(
+                    chat_id,
+                    f"Вы уверены, что хотите забанить пользователя {user_to_ban.first_name}?",
+                    reply_markup=get_confirmation_keyboard('ban', user_id),
+                )
+        else:
+            bot.send_message(chat_id, "Невозможно удалить владельца чата")
+    else:
+        bot.send_message(chat_id, "Не удалось определить пользователя для бана.")
 
-                @bot.message_handler(commands=['mute'])
-                def mute_user(message):
-                    chat_id = message.chat.id
-                    if message.reply_to_message:
-                        user_id = message.reply_to_message.from_user.id
-                        bot.restrict_chat_member(chat_id, user_id, until_date=3600)  # на 1 час
-                    else:
-                        bot.reply_to(message, "Вы должны ответить на сообщение пользователя, которого хотите замутить.")
+@bot.message_handler(commands=['mute'])
+def mute_command(message):
+    if not message.reply_to_message:
+        bot.send_message(message.chat.id, "Ошибка: Необходимо ответить на сообщение пользователя, которому вы хотите выдать мут.")
+        return
 
-                @bot.message_handler(commands=['ban'])
-                def ban_user(message):
-                    chat_id = message.chat.id
-                    if message.reply_to_message:
-                        user_id = message.reply_to_message.from_user.id
-                        bot.kick_chat_member(chat_id, user_id)
-                    else:
-                        bot.reply_to(message, "Вы должны ответить на сообщение пользователя, которого хотите забанить.")
+    user_to_mute = message.reply_to_message.from_user
+    if user_to_mute:
+        user_id = user_to_mute.id
+        chat_id = message.chat.id
+        if user_id == bot.get_me().id:
+            bot.send_message(chat_id, "Вы не можете использовать эту команду на сообщении бота.")
+        elif user_id == message.from_user.id:
+            bot.send_message(chat_id, "Вы не можете использовать эту команду на своем собственном сообщении.")
+        elif is_owner(chat_id, user_id):  # Добавляем проверку на владельца чата
+            bot.send_message(chat_id, "Невозможно выдать мут владельцу чата.")
+        else:
+            bot.send_message(
+                chat_id,
+                f"Вы уверены, что хотите выдать мут пользователю {user_to_mute.first_name} на 1 час?",
+                reply_markup=get_confirmation_keyboard('mute', user_id),
+            )
+    else:
+        bot.send_message(chat_id, "Не удалось определить пользователя для выдачи мута")
+
+
+
+
+@bot.message_handler(commands=['ban'])
+def ban_command(message):
+    user_to_ban = message.reply_to_message.from_user
+    if user_to_ban:
+        user_id = user_to_ban.id
+        chat_id = message.chat.id
+        if not is_owner(chat_id, user_id):
+            bot.send_message(
+                chat_id,
+                f"Вы уверены, что хотите забанить пользователя {user_to_ban.first_name}?",
+                reply_markup=get_confirmation_keyboard('ban', user_id),
+            )
+        else:
+            bot.send_message(chat_id, "Невозможно удалить владельца чата")
+
+@bot.message_handler(commands=['mute'])
+def mute_command(message):
+    if not message.reply_to_message:
+        bot.send_message(message.chat.id, "Ошибка: Необходимо ответить на сообщение пользователя, которому вы хотите выдать мут.")
+        return
+
+    user_to_mute = message.reply_to_message.from_user
+    if user_to_mute:
+        user_id = user_to_mute.id
+        chat_id = message.chat.id
+        if user_id == bot.get_me().id:
+            bot.send_message(chat_id, "Вы не можете использовать эту команду на сообщении бота.")
+        elif user_id == message.from_user.id:
+            bot.send_message(chat_id, "Вы не можете использовать эту команду на своем собственном сообщении.")
+        elif is_owner(chat_id, user_id):  # Добавляем проверку на владельца чата
+            bot.send_message(chat_id, "Невозможно выдать мут владельцу чата.")
+        else:
+            bot.send_message(
+                chat_id,
+                f"Вы уверены, что хотите выдать мут пользователю {user_to_mute.first_name} на 1 час?",
+                reply_markup=get_confirmation_keyboard('mute', user_id),
+            )
+    else:
+        bot.send_message(chat_id, "Не удалось определить пользователя для выдачи мута")
+
+
+
+
+
+def get_confirmation_keyboard(action, user_id):
+    confirm_button = InlineKeyboardButton(
+        'Подтвердить',
+        callback_data=f'confirm_{action}_{user_id}',
+    )
+    cancel_button = InlineKeyboardButton(
+        'Отмена',
+        callback_data=f'cancel_{action}_{user_id}',
+    )
+    keyboard = InlineKeyboardMarkup().add(confirm_button, cancel_button)
+    return keyboard
+
+def is_owner(chat_id, user_id):
+    chat_member = bot.get_chat_member(chat_id, user_id)
+    return chat_member.status == 'creator'
+
+@bot.callback_query_handler(func=lambda call: True)
+def handle_button_click(call):
+    if call.data.startswith('confirm'):
+        command, user_id = call.data.split('_')[1], call.data.split('_')[2]
+        if command == 'ban':
+            chat_id = call.message.chat.id
+            if not is_owner(chat_id, user_id):
+                bot.kick_chat_member(chat_id, user_id)
+                bot.answer_callback_query(call.id, 'Пользователь кикнут из чата')
+            else:
+                bot.answer_callback_query(call.id, 'Невозможно удалить владельца чата')
+        elif command == 'mute':
+            chat_id = call.message.chat.id
+            bot.restrict_chat_member(chat_id, user_id, until_date=datetime.now() + timedelta(seconds=3600))
+            bot.answer_callback_query(call.id, 'Пользователю выдан мут на 1 час')
+        bot.delete_message(chat_id, call.message.message_id)
+
+    elif call.data.startswith('cancel'):
+        chat_id = call.message.chat.id
+        bot.delete_message(chat_id, call.message.message_id)
+        bot.answer_callback_query(call.id, 'Действие отменено')
 
 
 try:
